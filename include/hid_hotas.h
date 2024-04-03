@@ -33,7 +33,8 @@ struct HOTAS_Axis {
         this->type = type;
     }
     uint8_t type;
-    uint16_t value = 0;
+    /// 0>=<1
+    float value = 0;
 };
 
 struct HOTAS_Buttons {

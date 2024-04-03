@@ -107,11 +107,11 @@ void HOTAS::sendState() {
 	uint8_t *ptr = data;
 
     for (uint8_t i = 0; i < axesCount; i++) {
-        buildAndSet16BitValue(&ptr, axes[i]->value);
+        buildAndSet16BitValue(&ptr, axes[i]->value * 0xFFFF);
     }
 
     for (uint8_t i = 0; i < simulationAxesCount; i++) {
-        buildAndSet16BitValue(&ptr, simulationAxes[i]->value);
+        buildAndSet16BitValue(&ptr, simulationAxes[i]->value * 0xFFFF);
     }
 
     for (int i = 0; i < buttons->bytesLength; i++) {
