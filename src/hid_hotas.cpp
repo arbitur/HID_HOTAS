@@ -19,6 +19,11 @@ void set5(uint8_t **ptr, uint8_t v1, uint8_t v2, uint8_t v3, uint8_t v4, uint8_t
 }
 
 HOTAS::HOTAS(HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, uint8_t simulationAxesCount, HOTAS_Buttons* buttons) {
+    HOTAS(3, axes, axesCount, simulationAxes, simulationAxesCount, buttons);
+}
+
+HOTAS::HOTAS(uint8_t hidReportId, HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, uint8_t simulationAxesCount, HOTAS_Buttons* buttons) {
+    this->hidReportId = hidReportId;
     this->axes = axes;
     this->axesCount = axesCount;
     this->simulationAxes = simulationAxes;
@@ -31,53 +36,55 @@ HOTAS::HOTAS(HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, 
     set2(&ptr, USAGE_PAGE, GENERAL_DESKTOP);
     set2(&ptr, USAGE, JOYSTICK);
     set2(&ptr, COLLECTION, 0x01); // (Application)
-        set2(&ptr, 0x85, hidReportId);  // REPORT_ID (3)
+        set2(&ptr, REPORT_ID, hidReportId);
+
+        if (buttons != NULL) {
+            set2(&ptr, USAGE_PAGE, 0x09); // (Button)
+            set2(&ptr, USAGE_MINIMUM, 0x01); //  (Button 1)
+            set2(&ptr, USAGE_MAXIMUM, buttons->numberOfButtons); // (Button 32)
+            set2(&ptr, LOGICAL_MINIMUM, 0); // (0)
+            set2(&ptr, LOGICAL_MAXIMUM, 1); // (1)
+            set2(&ptr, REPORT_SIZE, 1); // (1)
+            set2(&ptr, REPORT_COUNT, buttons->numberOfButtons); // (# of buttons)
+            set2(&ptr, UNIT_EXPONENT, 0x00); // (0)
+            set2(&ptr, UNIT, 0x00); // (None)
+            set2(&ptr, D_INPUT, 0x02); // (Data,Var,Abs)
+            if (buttons->bitsInLastByte > 0) {
+                set2(&ptr, REPORT_SIZE, 1); // (1)
+                set2(&ptr, REPORT_COUNT, 8 - buttons->bitsInLastByte); // (# of padding bits)
+                set2(&ptr, D_INPUT, 0x03); // (Const,Var,Abs)
+            }
+        }
+
 
         if (axes != NULL && axesCount > 0) {
-            set2(&ptr, USAGE, 0x01); // USAGE (Pointer)
-            set2(&ptr, 0x15, 0x00); // LOGICAL_MINIMUM (0)
-            set5(&ptr, 0x27, 0xFF, 0xFF, 0x00, 0x00); // LOGICAL_MAXIMUM (65535)
-            set2(&ptr, 0x75, 0x10); // REPORT_SIZE (16)
-            set2(&ptr, 0x95, axesCount); // REPORT_COUNT (axesCount)
+            set2(&ptr, USAGE_PAGE, GENERAL_DESKTOP);
+            set2(&ptr, USAGE, 0x01); // (Pointer)
+            set2(&ptr, LOGICAL_MINIMUM, 0x00); // (0)
+            set5(&ptr, LOGICAL_MAXIMUM_LONG, 0xFF, 0xFF, 0x00, 0x00); // (65535)
+            set2(&ptr, REPORT_SIZE, 16); // (16)
+            set2(&ptr, REPORT_COUNT, axesCount); // (# axis)
             set2(&ptr, COLLECTION, 0x00); // (Physical)
                 for (uint8_t i = 0; i < axesCount; i++) {
                     set2(&ptr, USAGE, axes[i]->type);
                 }
-                set2(&ptr, 0x81, 0x02); // INPUT (Data,Var,Abs)
+                set2(&ptr, D_INPUT, 0x02); // (Data,Var,Abs)
             set1(&ptr, END_COLLECTION);
         }
 
         if (simulationAxes != NULL && simulationAxesCount > 0) {
             set2(&ptr, USAGE_PAGE, SIMULATION_CONTROLS);
-            set2(&ptr, USAGE, 0x09); // USAGE (Airplane Simulation Device)
-            set2(&ptr, 0x15, 0x00); // LOGICAL_MINIMUM (0)
-            set5(&ptr, 0x27, 0xFF, 0xFF, 0x00, 0x00); // LOGICAL_MAXIMUM (65535)
-            set2(&ptr, 0x75, 0x10); // REPORT_SIZE (16)
-            set2(&ptr, 0x95, simulationAxesCount); // REPORT_COUNT (simulationCount)
+            // set2(&ptr, USAGE, AIRPLANE_SIMULATION_DEVICE);
+            set2(&ptr, LOGICAL_MINIMUM, 0x00); // (0)
+            set5(&ptr, LOGICAL_MAXIMUM_LONG, 0xFF, 0xFF, 0x00, 0x00); // (65535)
+            set2(&ptr, REPORT_SIZE, 16); // (16)
+            set2(&ptr, REPORT_COUNT, simulationAxesCount); // (# of simulation axis)
             set2(&ptr, COLLECTION, 0x00); // (Physical)
                 for (uint8_t i = 0; i < simulationAxesCount; i++) {
                     set2(&ptr, USAGE, simulationAxes[i]->type);
                 }
-                set2(&ptr, 0x81, 0x02); // INPUT (Data,Var,Abs)
+                set2(&ptr, D_INPUT, 0x02); // (Data,Var,Abs)
             set1(&ptr, END_COLLECTION);
-        }
-
-        if (buttons != NULL) {
-            set2(&ptr, USAGE_PAGE, 0x09); // (Button)
-            set2(&ptr, 0x19, 0x01);          // USAGE_MINIMUM (Button 1)
-            set2(&ptr, 0x29, buttons->numberOfButtons);   // USAGE_MAXIMUM (Button 32)
-            set2(&ptr, 0x15, 0x00);          // LOGICAL_MINIMUM (0)
-            set2(&ptr, 0x25, 0x01);          // LOGICAL_MAXIMUM (1)
-            set2(&ptr, 0x75, 0x01);          // REPORT_SIZE (1)
-            set2(&ptr, 0x95, buttons->numberOfButtons);   // REPORT_COUNT (# of buttons)
-            set2(&ptr, 0x55, 0x00);          // UNIT_EXPONENT (0)
-            set2(&ptr, 0x65, 0x00);          // UNIT (None)
-            set2(&ptr, 0x81, 0x02);          // INPUT (Data,Var,Abs)
-            if (buttons->bitsInLastByte > 0) {
-                set2(&ptr, 0x75, 0x01);                  // REPORT_SIZE (1)
-                set2(&ptr, 0x95, 8 - buttons->bitsInLastByte); // REPORT_COUNT (# of padding bits)
-                set2(&ptr, 0x81, 0x03);                  // INPUT (Const,Var,Abs)
-            }
         }
     set1(&ptr, END_COLLECTION);
 
@@ -88,23 +95,30 @@ HOTAS::HOTAS(HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, 
     DynamicHIDSubDescriptor *node = new DynamicHIDSubDescriptor(customHidReportDescriptor, hidReportDescriptorSize, false);
 	DynamicHID().AppendDescriptor(node);
 
-    hidReportSize = buttons->bytesLength;
-	hidReportSize += axesCount * 2;
-	hidReportSize += simulationAxesCount * 2;
+    this->hidReportSize = 0;
+    if (buttons != NULL) {
+        this->hidReportSize += buttons->bytesLength;
+    }
+	this->hidReportSize += axesCount * 2;
+	this->hidReportSize += simulationAxesCount * 2;
 }
 
 void buildAndSet16BitValue(uint8_t **ptr, uint16_t value) {
 	uint8_t highByte = (uint8_t)(value >> 8);
 	uint8_t lowByte = (uint8_t)(value & 0x00FF);
-	**ptr = lowByte;
-    *ptr += 1;
-	**ptr = highByte;
-    *ptr += 1;
+    set1(ptr, lowByte);
+    set1(ptr, highByte);
 }
 
 void HOTAS::sendState() {
 	uint8_t data[hidReportSize];
 	uint8_t *ptr = data;
+
+    if (buttons != NULL) {
+        for (int i = 0; i < buttons->bytesLength; i++) {
+            set1(&ptr, buttons->bytes[i]);
+        }
+    }
 
     for (uint8_t i = 0; i < axesCount; i++) {
         buildAndSet16BitValue(&ptr, axes[i]->value * 0xFFFF);
@@ -113,11 +127,6 @@ void HOTAS::sendState() {
     for (uint8_t i = 0; i < simulationAxesCount; i++) {
         buildAndSet16BitValue(&ptr, simulationAxes[i]->value * 0xFFFF);
     }
-
-    for (int i = 0; i < buttons->bytesLength; i++) {
-		*ptr = buttons->bytes[i];
-        ptr += 1;
-	}
 
 	DynamicHID().SendReport(hidReportId, data, hidReportSize);
 }

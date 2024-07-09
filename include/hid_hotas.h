@@ -5,6 +5,17 @@
 
 #define USAGE_PAGE 0x05
 #define USAGE 0x09
+#define USAGE_MINIMUM 0x19
+#define USAGE_MAXIMUM 0x29
+#define LOGICAL_MINIMUM 0x15
+#define LOGICAL_MAXIMUM 0x25
+#define LOGICAL_MAXIMUM_LONG 0x27
+#define REPORT_SIZE 0x75
+#define REPORT_ID 0x85
+#define REPORT_COUNT 0x95
+#define UNIT_EXPONENT 0x55
+#define UNIT 0x65
+#define D_INPUT 0x81
 #define COLLECTION 0xA1
 #define END_COLLECTION 0xC0
 
@@ -53,26 +64,27 @@ struct HOTAS_Buttons {
     void setButtonPressed(uint8_t button, bool pressed) {
         if (button > numberOfButtons - 1) return;
         int i = button / 8;
-        int bit = button % 8;
-        bitWrite(bytes[i], bit, pressed);
+        int b = button % 8;
+        bitWrite(bytes[i], b, pressed);
     }
 
-    void getButtonPressed(uint8_t button) {
-        if (button > numberOfButtons - 1) return;
+    int8_t getButtonPressed(uint8_t button) {
+        if (button > numberOfButtons - 1) return -1;
         int i = button / 8;
-        int bit = button % 8;
-        bitRead(bytes[i], bit);
+        int b = button % 8;
+        return bitRead(bytes[i], b);
     }
 };
 
 class HOTAS {
 public:
     HOTAS(HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, uint8_t simulationAxesCount, HOTAS_Buttons* buttons);
+    HOTAS(uint8_t hidReportId, HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, uint8_t simulationAxesCount, HOTAS_Buttons* buttons);
 
     void sendState();
 
 private:
-    uint8_t hidReportId = 3;
+    uint8_t hidReportId;
     uint8_t hidReportSize;
 
     HOTAS_Axis** axes = NULL;
