@@ -3,28 +3,6 @@
 
 #include "DynamicHID/DynamicHID.h"
 
-#define USAGE_PAGE 0x05
-#define USAGE 0x09
-#define USAGE_MINIMUM 0x19
-#define USAGE_MAXIMUM 0x29
-#define LOGICAL_MINIMUM 0x15
-#define LOGICAL_MAXIMUM 0x25
-#define LOGICAL_MAXIMUM_LONG 0x27
-#define REPORT_SIZE 0x75
-#define REPORT_ID 0x85
-#define REPORT_COUNT 0x95
-#define UNIT_EXPONENT 0x55
-#define UNIT 0x65
-#define D_INPUT 0x81
-#define COLLECTION 0xA1
-#define END_COLLECTION 0xC0
-
-#define GENERAL_DESKTOP 0x01
-#define SIMULATION_CONTROLS 0x02
-
-#define JOYSTICK 0x04
-#define AIRPLANE_SIMULATION_DEVICE 0x09
-
 #if ARDUINO < 10606
 #error The Joystick library requires Arduino IDE 1.6.6 or greater. Please update your IDE.
 #endif // ARDUINO < 10606
@@ -38,6 +16,21 @@
 #if !defined(_USING_DYNAMIC_HID)
 #warning "Using legacy HID core (non pluggable)"
 #else // !defined(_USING_DYNAMIC_HID)
+
+// General desktop usages
+#define USAGE_X ( 0x30 )
+#define USAGE_Y ( 0x31 )
+#define USAGE_Z ( 0x32 )
+#define USAGE_RX ( 0x33 )
+#define USAGE_RY ( 0x34 )
+#define USAGE_RZ ( 0x35 )
+#define USAGE_SLIDER ( 0x36 )
+#define USAGE_DIAL ( 0x37 )
+#define USAGE_WHEEL ( 0x38 )
+
+// Simulation usages
+#define USAGE_THROTTLE ( 0xBB )
+#define USAGE_RUDDER ( 0xBA )
 
 struct HOTAS_Axis {
     HOTAS_Axis(uint8_t type) {
@@ -78,7 +71,6 @@ struct HOTAS_Buttons {
 
 class HOTAS {
 public:
-    HOTAS(HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, uint8_t simulationAxesCount, HOTAS_Buttons* buttons);
     HOTAS(uint8_t hidReportId, HOTAS_Axis** axes, uint8_t axesCount, HOTAS_Axis** simulationAxes, uint8_t simulationAxesCount, HOTAS_Buttons* buttons);
 
     void sendState();
